@@ -1,11 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import os
 import openai
 
 app = Flask(__name__)
 CORS(app)
 
-client = openai.OpenAI(api_key="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")
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route('/ask', methods=['POST'])
 def ask_wizlor():
