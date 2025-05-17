@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🧙‍♂️ Wizlor the Battle Advisor</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('Wizlor .png') no-repeat left center;
+      background-size: contain;
+      background-color: #e8f5e9;
+      height: 100vh;
+      font-family: 'Georgia', serif;
+      overflow: hidden;
+    }
+
+    #container {
+      position: fixed;
+      left: 45%;
+      top: 25%;
+      transform: translateX(-50%);
+      width: 300px;
+      background-color: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      font-size: 1em;
+      line-height: 1.4em;
+      border: 2px solid #ccc;
+    }
+
+    #container p {
+      margin: 10px 0;
+    }
+
+    #container strong {
+      display: block;
+      color: #3b4cca;
+      margin-bottom: 5px;
+    }
+
+    #mic-btn {
+      position: fixed;
+      bottom: 30px;
+      left: 45%;
+      transform: translateX(-50%);
+      width: 300px;
+      background-color: #3b4cca;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #mic-btn:hover {
+      background-color: #2a3691;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <p id="questionDisplay"><strong>You asked:</strong></p>
+    <p id="response"><strong>Wizlor says:</strong></p>
+  </div>
+
+  <button id="mic-btn" onclick="startVoiceInput()">🎙️ Speak to Wizlor</button>
+
+  <script>
+    function speak(text) {
+      const voices = window.speechSynthesis.getVoices();
+      const fallbackVoice = voices.find(v =>
+        v.lang.startsWith("en") && v.localService
+      ) || voices[0];
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = fallbackVoice;
+      utterance.pitch = 0.9;
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function startVoiceInput() {
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.start();
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("questionDisplay").innerHTML = "<strong>You asked:</strong> " + transcript;
+        askWizlor(transcript);
+      };
+    }
+
+    async function askWizlor(question) {
+      const responseDiv = document.getElementById("response");
+
+      const context = {
+        "player_level": 4,
+        "town_hall_level": 2,
+        "trophies": 41,
+        "resources": {
+          "gold": 7493,
+          "elixir": 3673,
+          "gems": 262
+        },
+        "army_composition": "Mostly Barbarians (visible), Archers not visible",
+        "training_camps": "2/2 full",
+        "defenses": "2 Cannons, 1 Archer Tower",
+        "storage_status": "Gold and Elixir collectors not full",
+        "builder_status": "Both builders idle",
+        "quests": "Rebuild clan castle",
+        "shield": "4h 32m remaining"
+      };
+
+      try {
+        const res = await fetch("http://localhost:5000/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, context })
+        });
+
+        const data = await res.json();
+        if (data.reply) {
+          responseDiv.innerHTML = "<strong>Wizlor says:</strong> " + data.reply;
+          speak(data.reply);
+        } else {
+          responseDiv.innerText = "Oops! " + data.error;
+        }
+      } catch (err) {
+        responseDiv.innerText = "Wizlor is unreachable. Is Flask running?";
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
