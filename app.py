@@ -50,6 +50,11 @@ def ask_wizlor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+    except Exception as e:
+        print("💥 Error in /ask:", e)
+        return jsonify({"error": str(e)}), 500
+
+
 # For Local tests
 # if __name__ == '__main__':
 #    app.run(debug=True, port=5000)
